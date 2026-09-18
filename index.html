@@ -43,9 +43,9 @@ button:focus-visible{outline:3px solid var(--target);outline-offset:2px}
 .top h1{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-weight:400;font-size:2.25rem;line-height:1.1;margin:8px 0 6px}
 .lede{margin:0 0 18px;color:var(--muted)}
 
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:4px;margin-bottom:14px;
+.tabs{display:grid;grid-template-columns:repeat(4,1fr);gap:4px;padding:4px;margin-bottom:14px;
   background:var(--surface);border:1px solid var(--line);border-radius:14px}
-.tabs button{border:0;background:transparent;color:var(--muted);font-weight:500;padding:10px 4px;border-radius:10px;cursor:pointer}
+.tabs button{border:0;background:transparent;color:var(--muted);font-weight:500;font-size:.92rem;padding:10px 2px;border-radius:10px;cursor:pointer}
 .tabs button[aria-selected="true"]{background:var(--ink);color:var(--paper)}
 
 .stage{background:var(--surface);border:1px solid var(--line);border-radius:20px;overflow:hidden}
@@ -71,6 +71,13 @@ button:focus-visible{outline:3px solid var(--target);outline-offset:2px}
 .target-chip b{color:var(--target);font-size:1.3rem;margin-left:4px}
 .level{color:var(--muted);font-size:.95rem}
 .level b{color:var(--ink)}
+.seg.practice{margin:12px 0 0}
+.seg.practice button{min-height:44px;font-size:.95rem;padding:8px 10px}
+.chips{display:flex;gap:6px;overflow-x:auto;padding:10px 2px 2px;-webkit-overflow-scrolling:touch}
+.chips span{flex:0 0 auto;min-width:40px;text-align:center;padding:6px 8px;border-radius:10px;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);font-weight:500}
+.chips span.done{border-color:var(--good);color:var(--good)}
+.chips span.now{border-color:var(--target);background:var(--target-soft);color:var(--ink);font-weight:700}
 .hint{min-height:3.4em;margin:10px 0;padding:12px 14px;border-radius:12px;background:var(--surface);border:1px solid var(--line);font-weight:500}
 .hint.good{border-color:var(--good);background:var(--good-soft)}
 .hint.warn{border-color:var(--voice)}
@@ -85,6 +92,11 @@ button:disabled{opacity:.4;cursor:default}
 .answers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
 .answers button{min-height:68px;font-size:1.1rem;font-weight:700}
 
+.song-row{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:12px;color:var(--muted);font-size:.92rem}
+.song-row b{color:var(--ink)}
+.mini{display:flex;gap:6px}
+.mini button{min-height:38px;min-width:46px;padding:4px 10px;border-radius:10px;border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-weight:700;cursor:pointer}
+.seg.songs button,.seg.tempo button{min-height:42px;font-size:.92rem;padding:8px 10px}
 .ear-hero{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:22px 18px 18px}
 .ear-num{font-family:"Black Han Sans","IBM Plex Sans KR",sans-serif;font-size:76px;line-height:1;font-variant-numeric:tabular-nums}
 .ear-num small{font-family:"IBM Plex Sans KR",system-ui,sans-serif;font-size:1rem;margin-left:6px;color:var(--muted)}
@@ -122,7 +134,8 @@ button:disabled{opacity:.4;cursor:default}
   <div class="tabs" role="tablist" aria-label="연습 모드">
     <button role="tab" aria-selected="true" data-mode="match">음 맞추기</button>
     <button role="tab" aria-selected="false" data-mode="ear">귀 훈련</button>
-    <button role="tab" aria-selected="false" data-mode="tuner">자유 튜너</button>
+    <button role="tab" aria-selected="false" data-mode="song">노래 연습</button>
+    <button role="tab" aria-selected="false" data-mode="tuner">튜너</button>
   </div>
 
   <section class="stage" id="stage">
@@ -142,6 +155,12 @@ button:disabled{opacity:.4;cursor:default}
       <div class="target-chip">목표 음<b id="targetName">–</b></div>
       <div class="level">레벨 <b id="levelNum">1</b>&nbsp;&nbsp;맞춘 음 <b id="scoreNum">0</b></div>
     </div>
+    <div class="seg practice" id="practiceSeg">
+      <button data-practice="random" aria-pressed="true">랜덤 음</button>
+      <button data-practice="penta" aria-pressed="false">도레미파솔</button>
+      <button data-practice="octave" aria-pressed="false">도레미파솔라시도</button>
+    </div>
+    <div class="chips" id="seqChips" hidden></div>
     <p class="hint" id="matchHint">시작하면 기준음이 나와요. 소리가 끝나면 같은 높이로 '아~' 하고 길게 불러보세요.</p>
     <div class="hold" aria-hidden="true"><i id="holdBar"></i></div>
     <div class="actions">
@@ -164,6 +183,35 @@ button:disabled{opacity:.4;cursor:default}
     <div class="answers">
       <button id="earDown" disabled>더 낮다 ↓</button>
       <button id="earUp" disabled>더 높다 ↑</button>
+    </div>
+  </section>
+
+  <section class="panel" id="panel-song" hidden>
+    <div class="seg songs" id="songSeg"></div>
+    <div class="song-row">
+      <span>소절 <b id="songPhrase">1 / 1</b></span>
+      <div class="mini">
+        <button id="songPrev">◀</button>
+        <button id="songNext">▶</button>
+      </div>
+    </div>
+    <div class="song-row">
+      <span>키 <b id="songKey">–</b></span>
+      <div class="mini">
+        <button id="songDown">낮게 ↓</button>
+        <button id="songUp">높게 ↑</button>
+      </div>
+    </div>
+    <div class="seg tempo" id="tempoSeg">
+      <button data-bpm="60" aria-pressed="false">느리게</button>
+      <button data-bpm="76" aria-pressed="true">보통</button>
+      <button data-bpm="96" aria-pressed="false">빠르게</button>
+    </div>
+    <p class="hint" id="songHint">소절을 고르면 멜로디를 들려드릴게요. 딱 소리 네 번 뒤에 파란 칸을 따라 부르면 음마다 채점해 줘요.</p>
+    <div class="actions">
+      <button class="primary" id="songPractice">이 소절 연습</button>
+      <button id="songListen">듣기만</button>
+      <button id="songRetry">다시 부르기</button>
     </div>
   </section>
 
@@ -201,7 +249,7 @@ button:disabled{opacity:.4;cursor:default}
     <ol class="routine">
       <li><b>귀 훈련 3분.</b> 높고 낮음을 확실히 구분하는 게 먼저예요.</li>
       <li><b>음 맞추기 5분.</b> 선이 파란 띠 안에 들어가 초록색으로 바뀌는 느낌을 기억하세요.</li>
-      <li><b>자유 튜너 2분.</b> 도레미파솔을 천천히 올라갔다 내려오세요.</li>
+      <li><b>노래 연습 2분.</b> 한 소절씩 듣고 따라 부르며 음마다 채점받으세요.</li>
     </ol>
     <p class="muted">조용한 곳에서 '아'나 '우'처럼 편한 모음으로 길게 내세요. 기준음이 끝난 뒤에 부르면 인식이 정확해요. 목에 힘이 들어가면 음이 뜨니 숨을 먼저 채우고 가볍게 시작하세요.</p>
   </section>
@@ -493,8 +541,8 @@ button:disabled{opacity:.4;cursor:default}
   function setText(el, t) { if (el.textContent !== t) el.textContent = t; }
 
   function updateReadout(now, midi) {
-    const inMatch = mode === 'match' && view.target != null;
-    setText(meterMid, mode === 'match' ? '목표' : '정확');
+    const inMatch = (mode === 'match' && view.target != null) || mode === 'song';
+    setText(meterMid, (mode === 'match' || mode === 'song') ? '목표' : '정확');
     if (midi == null) {
       needle.classList.remove('on', 'good');
       if (now - lastText > 250) {
@@ -505,9 +553,10 @@ button:disabled{opacity:.4;cursor:default}
       }
       return;
     }
-    const ref = inMatch ? view.target : Math.round(midi);
+    const st = mode === 'song' ? songTarget() : null;
+    const ref = st != null ? st : (mode === 'match' && view.target != null ? view.target : Math.round(midi));
     const scale = inMatch ? 100 : 50;
-    const tol = inMatch ? view.tol : 10;
+    const tol = st != null ? SONG_TOL : (inMatch ? view.tol : 10);
     const cents = (midi - ref) * 100;
     needle.style.left = (50 + clamp(cents / scale, -1, 1) * 50) + '%';
     needle.classList.add('on');
@@ -522,6 +571,17 @@ button:disabled{opacity:.4;cursor:default}
     }
   }
 
+  function songTarget() {
+    if (mode !== 'song' || song.state !== 'sing' || !song.notes.length) return null;
+    const beat = 60 / song.bpm;
+    const t = (performance.now() - song.t0) / 1000;
+    for (let i = 0; i < song.notes.length; i++) {
+      const n = song.notes[i];
+      if (t >= n.b0 * beat && t <= n.b1 * beat) return n.midi;
+    }
+    return null;
+  }
+
   /* ---------- match mode ---------- */
   const LEVELS = [
     { tol: 50, spread: 2 },
@@ -531,7 +591,14 @@ button:disabled{opacity:.4;cursor:default}
     { tol: 20, spread: 7 }
   ];
   const HOLD = 1000;
-  const match = { phase: 'idle', target: null, prev: null, hold: 0, silent: 0, score: 0, level: 1, gen: 0, ignoreUntil: 0 };
+  const PRACTICE = {
+    penta: [0, 2, 4, 5, 7, 5, 4, 2, 0],
+    octave: [0, 2, 4, 5, 7, 9, 11, 12, 11, 9, 7, 5, 4, 2, 0]
+  };
+  const match = {
+    phase: 'idle', target: null, prev: null, hold: 0, silent: 0, score: 0, level: 1,
+    gen: 0, ignoreUntil: 0, practice: 'random', seq: [], idx: 0, rounds: 0
+  };
   const matchHint = $('#matchHint'), holdBar = $('#holdBar');
   const btnStart = $('#matchStart'), btnReplay = $('#matchReplay'), btnSkip = $('#matchSkip');
   const hintState = { key: '', pendKey: '', pendSince: 0 };
@@ -556,19 +623,98 @@ button:disabled{opacity:.4;cursor:default}
     setText($('#scoreNum'), String(match.score));
   }
 
+  function buildSeq() {
+    const deg = PRACTICE[match.practice];
+    match.idx = 0;
+    match.seq = deg ? deg.map(d => tonicFor() + d) : [];
+    renderChips();
+  }
+  function tonicFor() {
+    const off = match.practice === 'octave' ? 5 : 2;
+    return 12 * Math.round((rec.center - off) / 12);
+  }
+  function renderChips() {
+    const box = $('#seqChips');
+    if (match.practice === 'random' || !match.seq.length) {
+      box.hidden = true;
+      box.textContent = '';
+      return;
+    }
+    box.hidden = false;
+    if (box.childElementCount !== match.seq.length) {
+      box.textContent = '';
+      match.seq.forEach(m => {
+        const el = document.createElement('span');
+        el.textContent = koName(m);
+        box.appendChild(el);
+      });
+    }
+    Array.from(box.children).forEach((el, i) => {
+      const cls = i < match.idx ? 'done' : (i === match.idx && match.phase !== 'idle' ? 'now' : '');
+      if (el.className !== cls) el.className = cls;
+    });
+    const cur = box.children[match.idx];
+    if (cur && cur.scrollIntoView) {
+      try { cur.scrollIntoView({ block: 'nearest', inline: 'center' }); } catch (e) {}
+    }
+  }
+
+  function startRound() {
+    if (match.practice === 'random') { nextTarget(); return; }
+    if (!match.seq.length) buildSeq();
+    match.idx = 0;
+    match.phase = 'preview';
+    renderChips();
+    const gen = ++match.gen;
+    stopMic();
+    forceHint(matchHint, '먼저 음계를 한 번 들려드릴게요. 따라 부르지 않고 듣기만 하세요.', '');
+    const upTo = Math.ceil(match.seq.length / 2);
+    let at = 0.3;
+    for (let i = 0; i < upTo; i++) { playTone(match.seq[i], 0.36, at, 0.5); at += 0.42; }
+    setTimeout(() => {
+      if (gen !== match.gen || mode !== 'match') return;
+      nextTarget();
+    }, (at + 0.3) * 1000);
+  }
+
   function nextTarget() {
     const L = LEVELS[match.level - 1];
-    let t, guard = 0;
-    do {
-      t = rec.center + Math.round((Math.random() * 2 - 1) * L.spread);
-      guard++;
-    } while (t === match.prev && guard < 10);
-    match.prev = t;
-    match.target = t;
-    view.target = t;
+    if (match.practice !== 'random') {
+      if (match.idx >= match.seq.length) { roundComplete(); return; }
+      match.target = match.seq[match.idx];
+    } else {
+      let t, guard = 0;
+      do {
+        t = rec.center + Math.round((Math.random() * 2 - 1) * L.spread);
+        guard++;
+      } while (t === match.prev && guard < 10);
+      match.prev = t;
+      match.target = t;
+    }
+    view.target = match.target;
     view.tol = L.tol;
     renderMatchHead();
+    renderChips();
     playTarget();
+  }
+
+  function roundComplete() {
+    match.phase = 'done';
+    match.rounds++;
+    const lv = Math.min(LEVELS.length, 1 + match.rounds);
+    match.level = lv;
+    if (lv > rec.bestLevel) { rec.bestLevel = lv; save(); renderStats(); }
+    match.idx = match.seq.length;
+    renderChips();
+    renderMatchHead();
+    forceHint(matchHint, `한 바퀴 완주! ${match.rounds}바퀴째예요. 레벨 ${lv}로 다시 처음부터 갈게요.`, 'good');
+    const stage = $('#stage');
+    stage.classList.remove('hit'); void stage.offsetWidth; stage.classList.add('hit');
+    setTimeout(() => stage.classList.remove('hit'), 800);
+    stopMic();
+    chime();
+    const gen = ++match.gen;
+    setTimeout(() => { if (gen === match.gen && mode === 'match') startRound(); }, 2400);
   }
 
   function playTarget() {
@@ -639,13 +785,20 @@ button:disabled{opacity:.4;cursor:default}
     match.phase = 'done';
     match.score++;
     rec.hits++; rec.tries++;
-    const newLevel = Math.min(LEVELS.length, 1 + Math.floor(match.score / 4));
+    if (match.practice !== 'random') match.idx++;
+    const newLevel = match.practice === 'random'
+      ? Math.min(LEVELS.length, 1 + Math.floor(match.score / 4))
+      : match.level;
     const up = newLevel > match.level;
     match.level = newLevel;
     if (newLevel > rec.bestLevel) rec.bestLevel = newLevel;
     save(); renderStats(); renderMatchHead();
     holdBar.style.width = '100%';
-    forceHint(matchHint, up ? `성공! 레벨 ${newLevel}로 올라가요. 초록 범위가 조금 더 좁아져요.` : '성공! 다음 음으로 넘어가요.', 'good');
+    renderChips();
+    const lastOfRound = match.practice !== 'random' && match.idx >= match.seq.length;
+    forceHint(matchHint, up
+      ? `성공! 레벨 ${newLevel}로 올라가요. 초록 범위가 조금 더 좁아져요.`
+      : (lastOfRound ? '성공! 마지막 음이었어요.' : '성공! 다음 음으로 넘어가요.'), 'good');
     const stage = $('#stage');
     stage.classList.remove('hit'); void stage.offsetWidth; stage.classList.add('hit');
     setTimeout(() => stage.classList.remove('hit'), 800);
@@ -668,6 +821,7 @@ button:disabled{opacity:.4;cursor:default}
     if (mode === 'match') { listening = false; stopMic(); }
     forceHint(matchHint, "시작하면 기준음이 나와요. 소리가 끝나면 같은 높이로 '아~' 하고 길게 불러보세요.", '');
     renderMatchHead();
+    renderChips();
     needsDraw = true;
   }
 
@@ -680,20 +834,322 @@ button:disabled{opacity:.4;cursor:default}
     if (r !== 'ok') return;
     if (mode !== 'match') { stopMic(); return; }
     listening = true;
-    match.score = 0; match.level = 1; match.prev = null;
+    match.score = 0; match.level = 1; match.prev = null; match.rounds = 0;
+    buildSeq();
     trace.length = 0;
     btnStart.textContent = '멈추기';
     btnReplay.disabled = false;
     btnSkip.disabled = false;
     markDay();
-    nextTarget();
+    startRound();
   });
   btnReplay.addEventListener('click', () => { if (match.target != null) playTarget(); });
   btnSkip.addEventListener('click', () => {
     if (match.phase === 'idle') return;
     if (match.phase !== 'done') { rec.tries++; save(); renderStats(); }
+    if (match.practice !== 'random' && match.phase !== 'done') match.idx++;
     nextTarget();
   });
+
+  $$('#practiceSeg button').forEach(b => b.addEventListener('click', () => {
+    if (match.practice === b.dataset.practice) return;
+    match.practice = b.dataset.practice;
+    $$('#practiceSeg button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    match.rounds = 0;
+    match.level = 1;
+    buildSeq();
+    renderMatchHead();
+    if (match.phase !== 'idle') startRound();
+  }));
+
+  /* ---------- song mode ---------- */
+  const DEG_KO = { '-5':'솔','-3':'라','-1':'시','0':'도','2':'레','4':'미','5':'파','7':'솔','9':'라','11':'시','12':'도','14':'레','16':'미','17':'파','19':'솔' };
+  const SONGS = [
+    { name: '작은별', bars: [
+      [[0,1],[0,1],[7,1],[7,1],[9,1],[9,1],[7,2]],
+      [[5,1],[5,1],[4,1],[4,1],[2,1],[2,1],[0,2]],
+      [[7,1],[7,1],[5,1],[5,1],[4,1],[4,1],[2,2]],
+      [[7,1],[7,1],[5,1],[5,1],[4,1],[4,1],[2,2]],
+      [[0,1],[0,1],[7,1],[7,1],[9,1],[9,1],[7,2]],
+      [[5,1],[5,1],[4,1],[4,1],[2,1],[2,1],[0,2]]
+    ]},
+    { name: '나비야', bars: [
+      [[7,1],[4,1],[4,2],[5,1],[2,1],[2,2]],
+      [[0,1],[2,1],[4,1],[5,1],[7,1],[7,1],[7,2]],
+      [[7,1],[4,1],[4,2],[5,1],[2,1],[2,2]],
+      [[0,1],[4,1],[7,1],[7,1],[4,1],[2,1],[0,2]]
+    ]},
+    { name: '환희의 송가', bars: [
+      [[4,1],[4,1],[5,1],[7,1],[7,1],[5,1],[4,1],[2,1]],
+      [[0,1],[0,1],[2,1],[4,1],[4,1.5],[2,0.5],[2,2]],
+      [[4,1],[4,1],[5,1],[7,1],[7,1],[5,1],[4,1],[2,1]],
+      [[0,1],[0,1],[2,1],[4,1],[2,1.5],[0,0.5],[0,2]]
+    ]},
+    { name: '생일 축하', bars: [
+      [[7,0.75],[7,0.25],[9,1],[7,1],[12,1],[11,2]],
+      [[7,0.75],[7,0.25],[9,1],[7,1],[14,1],[12,2]],
+      [[7,0.75],[7,0.25],[19,1],[16,1],[12,1],[11,1],[9,1]],
+      [[17,0.75],[17,0.25],[16,1],[12,1],[14,1],[12,2]]
+    ]}
+  ];
+  const SONG_TOL = 50;
+  const song = { id: 0, phrase: 0, tonic: 48, transpose: 0, bpm: 76, state: 'idle', gen: 0, t0: 0, notes: [], beats: 0, dur: 0, trace: [] };
+  const songHint = $('#songHint'), btnSongPractice = $('#songPractice');
+
+  function click(when) {
+    const c = audio();
+    const t0 = c.currentTime + 0.02 + when;
+    const o = c.createOscillator(), gn = c.createGain();
+    o.type = 'square'; o.frequency.value = 1400;
+    gn.gain.setValueAtTime(0.16, t0);
+    gn.gain.exponentialRampToValueAtTime(0.0008, t0 + 0.07);
+    o.connect(gn); gn.connect(c.destination);
+    o.start(t0); o.stop(t0 + 0.09);
+  }
+
+  function buildPhrase() {
+    const sg = SONGS[song.id];
+    const all = [].concat.apply([], sg.bars).map(n => n[0]);
+    const mid = (Math.min.apply(null, all) + Math.max.apply(null, all)) / 2;
+    song.tonic = 12 * Math.round((rec.center - mid) / 12) + song.transpose;
+    song.phrase = clamp(song.phrase, 0, sg.bars.length - 1);
+    let b = 0;
+    song.notes = sg.bars[song.phrase].map(pair => {
+      const d = pair[0], len = pair[1];
+      const n = { midi: song.tonic + d, label: DEG_KO[String(d)] || koName(song.tonic + d), b0: b, b1: b + len, frames: 0, good: 0, voiced: 0, sum: 0, hit: null };
+      b += len;
+      return n;
+    });
+    song.beats = b;
+    song.dur = b * (60 / song.bpm);
+    song.trace = [];
+    needsDraw = true;
+  }
+
+  function renderSong() {
+    const sg = SONGS[song.id];
+    setText($('#songPhrase'), `${song.phrase + 1} / ${sg.bars.length}`);
+    setText($('#songKey'), `도 = ${koFull(song.tonic)} (${sciName(song.tonic)})`);
+    $$('#songSeg button').forEach((b, i) => b.setAttribute('aria-pressed', String(i === song.id)));
+    $$('#tempoSeg button').forEach(b => b.setAttribute('aria-pressed', String(+b.dataset.bpm === song.bpm)));
+  }
+
+  function stopSong() {
+    song.gen++;
+    song.state = 'idle';
+    listening = false;
+    stopMic();
+    setText(btnSongPractice, '이 소절 연습');
+    needsDraw = true;
+  }
+
+  function songDemo(thenSing) {
+    buildPhrase();
+    const gen = ++song.gen;
+    song.state = 'demo';
+    listening = false;
+    stopMic();
+    const beat = 60 / song.bpm;
+    const lead = 0.35;
+    song.notes.forEach(n => playTone(n.midi, Math.max(0.2, (n.b1 - n.b0) * beat * 0.92), lead + n.b0 * beat, 0.5));
+    song.t0 = performance.now() + lead * 1000;
+    forceHint(songHint, '멜로디를 들어보세요. 파란 칸이 부를 음이에요.', '');
+    setText(btnSongPractice, '멈추기');
+    setTimeout(() => {
+      if (gen !== song.gen || mode !== 'song') return;
+      if (thenSing) songCountIn();
+      else stopSong();
+    }, (lead + song.dur + 0.4) * 1000);
+  }
+
+  function songCountIn() {
+    if (!song.notes.length) buildPhrase();
+    const gen = ++song.gen;
+    song.state = 'count';
+    listening = false;
+    stopMic();
+    const beat = 60 / song.bpm;
+    for (let i = 0; i < 4; i++) click(0.15 + i * beat);
+    forceHint(songHint, '딱 소리 네 번 뒤에 시작해요. 준비하세요.', '');
+    setText(btnSongPractice, '멈추기');
+    setTimeout(async () => {
+      if (gen !== song.gen || mode !== 'song') return;
+      const r = await startMic();
+      if (gen !== song.gen || mode !== 'song') { stopMic(); return; }
+      if (r !== 'ok') { stopSong(); return; }
+      smooth.length = 0;
+      song.trace = [];
+      song.notes.forEach(n => { n.frames = 0; n.good = 0; n.voiced = 0; n.sum = 0; n.hit = null; });
+      listening = true;
+      song.t0 = performance.now() + 250;
+      song.state = 'sing';
+      forceHint(songHint, '지금 부르세요. 세로선이 지나가는 칸을 따라가면 돼요.', '');
+    }, (0.15 + 4 * beat) * 1000);
+  }
+
+  function gradeNote(n) {
+    n.hit = n.frames >= 3 && n.good / Math.max(1, n.frames) >= 0.45;
+  }
+
+  function songStep(now, midi) {
+    const beat = 60 / song.bpm;
+    const t = (now - song.t0) / 1000;
+    if (t < 0) return;
+    if (midi != null) song.trace.push({ t: t, m: midi });
+    for (let i = 0; i < song.notes.length; i++) {
+      const n = song.notes[i];
+      const s = n.b0 * beat, e = n.b1 * beat;
+      if (t > e) { if (n.hit == null) gradeNote(n); continue; }
+      if (t >= s + Math.min(0.12, beat * 0.2)) {
+        n.frames++;
+        if (midi != null) {
+          const dv = (midi - n.midi) * 100;
+          n.voiced++; n.sum += dv;
+          if (Math.abs(dv) <= SONG_TOL) n.good++;
+        }
+      }
+      break;
+    }
+    if (t > song.dur + 0.3) songFinish();
+  }
+
+  function songFinish() {
+    song.notes.forEach(n => { if (n.hit == null) gradeNote(n); });
+    song.state = 'result';
+    listening = false;
+    stopMic();
+    setText(btnSongPractice, '이 소절 연습');
+    const total = song.notes.length;
+    const hits = song.notes.filter(n => n.hit).length;
+    const pct = Math.round(hits / total * 100);
+    const quiet = song.notes.filter(n => n.voiced <= 2).length;
+    let msg, cls;
+    if (quiet > total / 2) {
+      msg = '소리가 거의 잡히지 않았어요. 조금 더 크게, 끊기지 않게 불러보세요.';
+      cls = 'warn';
+    } else {
+      const bad = song.notes.filter(n => !n.hit && n.voiced > 2);
+      let extra = '';
+      if (bad.length) {
+        const b = bad[0];
+        const i = song.notes.indexOf(b) + 1;
+        const avg = Math.round(b.sum / b.voiced);
+        extra = ` ${i}번째 ${b.label} 음이 평균 ${Math.abs(avg)}센트 ${avg > 0 ? '높았' : '낮았'}어요.`;
+      }
+      msg = `${total}음 중 ${hits}음 정확 (${pct}%).` + extra;
+      cls = pct >= 70 ? 'good' : 'warn';
+    }
+    forceHint(songHint, msg, cls);
+    rec.hits += hits; rec.tries += total; save(); renderStats(); markDay();
+    const sg = SONGS[song.id];
+    if (pct >= 70 && song.phrase < sg.bars.length - 1) {
+      const gen = ++song.gen;
+      setTimeout(() => {
+        if (gen !== song.gen || mode !== 'song') return;
+        song.phrase++;
+        buildPhrase(); renderSong();
+        songDemo(true);
+      }, 1800);
+    }
+  }
+
+  btnSongPractice.addEventListener('click', () => {
+    audio();
+    if (song.state !== 'idle' && song.state !== 'result') { stopSong(); return; }
+    songDemo(true);
+  });
+  $('#songListen').addEventListener('click', () => { audio(); songDemo(false); });
+  $('#songRetry').addEventListener('click', () => { audio(); buildPhrase(); songCountIn(); });
+  $('#songPrev').addEventListener('click', () => { stopSong(); song.phrase--; buildPhrase(); renderSong(); });
+  $('#songNext').addEventListener('click', () => { stopSong(); song.phrase++; buildPhrase(); renderSong(); });
+  $('#songDown').addEventListener('click', () => { stopSong(); song.transpose--; buildPhrase(); renderSong(); });
+  $('#songUp').addEventListener('click', () => { stopSong(); song.transpose++; buildPhrase(); renderSong(); });
+  $$('#tempoSeg button').forEach(b => b.addEventListener('click', () => {
+    stopSong(); song.bpm = +b.dataset.bpm; buildPhrase(); renderSong();
+  }));
+  (function initSongs() {
+    const box = $('#songSeg');
+    SONGS.forEach((sg, i) => {
+      const b = document.createElement('button');
+      b.textContent = sg.name;
+      b.setAttribute('aria-pressed', String(i === 0));
+      b.addEventListener('click', () => {
+        stopSong();
+        song.id = i; song.phrase = 0; song.transpose = 0;
+        buildPhrase(); renderSong();
+      });
+      box.appendChild(b);
+    });
+  })();
+
+  function drawSong(now) {
+    const w = cv.clientWidth, h = cv.clientHeight;
+    if (!w || !h || !song.notes.length) return;
+    g.clearRect(0, 0, w, h);
+    const beat = 60 / song.bpm;
+    const ms = song.notes.map(n => n.midi);
+    const lo = Math.min.apply(null, ms), hi = Math.max.apply(null, ms);
+    const mid = (lo + hi) / 2;
+    const span = Math.max(4, (hi - lo) / 2 + 2.5);
+    const Y = m => (mid + span - m) / (2 * span) * h;
+    const L = 40, R = w - 10;
+    const X = t => L + clamp(t / song.dur, 0, 1) * (R - L);
+
+    g.font = '500 11px "IBM Plex Sans KR", system-ui, sans-serif';
+    g.textBaseline = 'middle';
+    for (let m = Math.floor(mid - span); m <= Math.ceil(mid + span); m++) {
+      const y = Y(m);
+      if (y < -4 || y > h + 4) continue;
+      const p = ((m % 12) + 12) % 12;
+      g.beginPath(); g.moveTo(L, y); g.lineTo(w, y);
+      g.strokeStyle = p === 0 ? C['line-strong'] : C.line;
+      g.lineWidth = NATURAL.has(p) ? 1 : 0.6;
+      g.setLineDash(NATURAL.has(p) ? [] : [2, 4]);
+      g.stroke();
+      if (NATURAL.has(p)) {
+        g.fillStyle = p === 0 ? C.ink : C.muted;
+        g.fillText(NOTE_KO[p] + (p === 0 ? (Math.floor(m / 12) - 1) : ''), 8, clamp(y, 7, h - 7));
+      }
+    }
+    g.setLineDash([]);
+
+    const tol = SONG_TOL / 100;
+    song.notes.forEach(n => {
+      const x1 = X(n.b0 * beat), x2 = X(n.b1 * beat);
+      const y1 = Y(n.midi + tol), y2 = Y(n.midi - tol);
+      g.fillStyle = n.hit === true ? C['good-soft'] : C['target-soft'];
+      g.fillRect(x1 + 1, y1, Math.max(3, x2 - x1 - 2), y2 - y1);
+      g.strokeStyle = n.hit === false ? C.voice : (n.hit === true ? C.good : C.target);
+      g.lineWidth = 1.5;
+      g.strokeRect(x1 + 1, y1, Math.max(3, x2 - x1 - 2), y2 - y1);
+      if (x2 - x1 > 16) {
+        g.fillStyle = C.muted;
+        g.fillText(n.label, x1 + 4, clamp(y1 - 9, 8, h - 8));
+      }
+    });
+
+    if (song.trace.length > 1) {
+      g.lineWidth = 3; g.lineCap = 'round'; g.lineJoin = 'round';
+      for (let i = 1; i < song.trace.length; i++) {
+        const a = song.trace[i - 1], b = song.trace[i];
+        if (b.t - a.t > 0.2 || Math.abs(a.m - b.m) > 1.5) continue;
+        g.strokeStyle = C.voice;
+        g.beginPath();
+        g.moveTo(X(a.t), Y(a.m));
+        g.lineTo(X(b.t), Y(b.m));
+        g.stroke();
+      }
+    }
+
+    if (song.state === 'demo' || song.state === 'sing') {
+      const t = (now - song.t0) / 1000;
+      if (t >= 0) {
+        const x = X(t);
+        g.strokeStyle = C.ink; g.lineWidth = 2;
+        g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke();
+      }
+    }
+  }
 
   /* ---------- ear mode ---------- */
   const ear = {
@@ -791,6 +1247,7 @@ button:disabled{opacity:.4;cursor:default}
     rec.center = c;
     save();
     renderRange();
+    if (match.practice !== 'random') buildSeq();
     if (view.target == null) view.center = c;
     needsDraw = true;
   }
@@ -866,6 +1323,7 @@ button:disabled{opacity:.4;cursor:default}
     if (m === mode) return;
     if (mode === 'match') stopMatch();
     if (mode === 'tuner') { cancelFinder(); setTuner(false); }
+    if (mode === 'song') stopSong();
     ear.gen++;
     if (ear.answer != null) {
       btnUp.disabled = true; btnDown.disabled = true;
@@ -875,6 +1333,7 @@ button:disabled{opacity:.4;cursor:default}
     $$('.tabs button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.mode === m)));
     $('#panel-match').hidden = m !== 'match';
     $('#panel-ear').hidden = m !== 'ear';
+    $('#panel-song').hidden = m !== 'song';
     $('#panel-tuner').hidden = m !== 'tuner';
     $('#stage').hidden = m === 'ear';
     listening = false;
@@ -883,6 +1342,7 @@ button:disabled{opacity:.4;cursor:default}
     view.center = rec.center;
     trace.length = 0;
     needsDraw = true;
+    if (m === 'song') { buildPhrase(); renderSong(); }
   }
   $$('.tabs button').forEach(b => b.addEventListener('click', () => setMode(b.dataset.mode)));
 
@@ -917,7 +1377,14 @@ button:disabled{opacity:.4;cursor:default}
       while (trace.length && now - trace[0].t > WINDOW + 300) trace.shift();
     }
 
-    if (mode !== 'ear' && (listening || needsDraw)) {
+    if (mode === 'song') {
+      if (song.state === 'sing') songStep(now, midi);
+      if (song.state !== 'idle' || needsDraw) {
+        drawSong(now);
+        updateReadout(now, midi);
+        needsDraw = song.state !== 'idle';
+      }
+    } else if (mode !== 'ear' && (listening || needsDraw)) {
       let desired = view.center;
       if (view.target != null) desired = view.target;
       else if (midi != null && Math.abs(midi - view.center) > SPAN - 3) desired = midi;
@@ -936,12 +1403,15 @@ button:disabled{opacity:.4;cursor:default}
     if (!document.hidden) return;
     if (mode === 'match' && match.phase !== 'idle') stopMatch();
     if (mode === 'tuner') { cancelFinder(); setTuner(false); }
+    if (mode === 'song') stopSong();
   });
   readColors();
   sizeCanvas();
   renderRange();
   renderStats();
   renderMatchHead();
+  buildPhrase();
+  renderSong();
   if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => { needsDraw = true; });
   requestAnimationFrame(tick);
 })();
